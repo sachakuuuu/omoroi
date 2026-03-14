@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)file:///C:/Users/harut/Downloads/QR%20Generator.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>QR Generator</title>
+    <script src="./QR Generator_files/qrcode.min.js.ダウンロード"></script>
+    <style>
+        body { font-family: 'Hiragino Kaku Gothic ProN','ヒラギノ角ゴ ProN W3'; padding: 30px; background: #DDDDDD; color: #eee; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: #2d2d2d; padding: 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        label { display: block; margin: 15px 0 5px; color: #4ec9b0; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #444; background: #100000; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; cursor: pointer; background: #007acc; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 1rem; margin-top: 10px; }
+        button:hover { background: #005fFF; }
+        .info-box { background: #383838; padding: 15px; border-radius: 4px; margin-top: 20px; font-size: 0.9rem; }
+        code { color: #ce9178; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>QR Generator</h1>
+    
+    
+    <label>URL:</label>
+    <input type="text" id="urlInput" value="abehiroshi.la.coocan.jp">
+
+    <label>dot size (0.1～0.2)</label>
+    <input type="number" id="dotSize" value="0.15" step="0.01">
+
+    <button onclick="downloadMcFunction()">Downloads (mcfunction)</button>
+
+    
+</div>
+
+<div id="qrcode" style="display:none;"></div>
+
+<script>
+function downloadMcFunction() {
+    const url = document.getElementById('urlInput').value;
+    const dotSize = parseFloat(document.getElementById('dotSize').value);
+    const qrDiv = document.getElementById('qrcode');
+    
+    qrDiv.innerHTML = "";
+    // 誤り訂正レベルは標準(M)に。URLの長さに敏感に反応させるため。
+    const qrcode = new QRCode(qrDiv, {
+        text: url,
+        width: 256,
+        height: 256,
+        correctLevel: QRCode.CorrectLevel.M
+    });
+
+    setTimeout(() => {
+        // qrcode.jsの内部モジュールから直接データを取得
+        const modules = qrcode._oQRCode.modules;
+        const cells = modules.length; 
+        
+        // 1ドットのサイズと間隔を同じにする
+        const scale = dotSize;
+        const spacing = dotSize;
+
+        let commands = `# URL: ${url}\n`;
+        commands += `# Total Cells: ${cells}x${cells}\n`;
+        commands += `# Predicted Size: ${(cells * spacing).toFixed(2)} blocks\n`;
+
+        for (let y = 0; y < cells; y++) {
+            for (let x = 0; x < cells; x++) {
+                const isBlack = modules[y][x];
+                const blockType = isBlack ? "black_concrete" : "white_concrete";
+
+                // 座標計算（原点から広がっていく）
+                const posX = (x * spacing).toFixed(4);
+                const posY = ((cells - y) * spacing).toFixed(4);
+                
+                commands += `summon block_display ~${posX} ~${posY} ~ {block_state:{Name:"minecraft:${blockType}"},billboard:"all",brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[${scale}f,${scale}f,${scale}f]}}\n`;
+            }
+        }
+
+        const blob = new Blob([commands], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'qr_code.mcfunction';
+        a.click();
+    }, 150);
+}
+</script>
+
+
+</body></html>
